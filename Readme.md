@@ -1,4 +1,4 @@
-# Frontend Wizards — Stage 1a Advanced Todo Card
+# HNG Internship — Frontend, Stage 1a Advanced Todo Card (stage 0 task advancement)
 
 ## Live Project Overview
 
@@ -142,7 +142,7 @@ Time behavior is more granular and state-aware.
 
 # Design Decisions
 
-## 🎨 UI / UX Choices
+## UI / UX Choices
 
 The card uses a premium modern UI with:
 
@@ -153,7 +153,7 @@ The card uses a premium modern UI with:
 * clear CTA buttons
 * safe wrapping for long text and tags
 
-## 📱 Responsiveness
+## Responsiveness
 
 Optimized for:
 
