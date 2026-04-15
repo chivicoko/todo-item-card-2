@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Todo Item Card | Further</title>
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: rgba(15, 23, 42, 0.82);
+      --border: rgba(255,255,255,0.12);
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #38bdf8;
+      --success: #22c55e;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --chip: rgba(255,255,255,0.08);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      font-family: Inter, system-ui, sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(56,189,248,0.18), transparent 35%),
+        radial-gradient(circle at bottom left, rgba(34,197,94,0.14), transparent 30%),
+        var(--bg);
+      color: var(--text);
+    }
+
+    .todo-card {
+      width: min(100%, 520px);
+      background: var(--card);
+      border: 1px solid var(--border);
+      backdrop-filter: blur(14px);
+      border-radius: 24px;
+      padding: 24px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.35);
+      overflow: hidden;
+      border-left: 6px solid var(--warning);
+    }
+    .todo-card.priority-low { border-left-color: var(--success); }
+    .todo-card.priority-medium { border-left-color: var(--warning); }
+    .todo-card.priority-high { border-left-color: var(--danger); }
+    .todo-card.overdue { box-shadow: 0 20px 60px rgba(239,68,68,0.2); }
+
+    .top-row, .meta-row, .actions, .status-row {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+
+    .checkbox-wrap { display:flex; gap:12px; flex:1; min-width:0; }
+    input[type="checkbox"], select, input, textarea, button {
+      font: inherit;
+    }
+    input[type="checkbox"] {
+      width:20px; height:20px; margin-top:4px; accent-color: var(--success); cursor:pointer;
+    }
+    h2 { margin:0; font-size: clamp(1.1rem,2vw,1.35rem); line-height:1.4; word-break:break-word; }
+    #collapsibleSection {
+      display: inline-block;
+      margin-top: .6rem;
+      margin-bottom: 1rem;
+    }
+    p { line-height:1.45; color:#cbd5e1; display: inline; }
+    .completed h2 { text-decoration: line-through; color: var(--muted); }
+    .completed { opacity: 0.9; }
+
+    .badge, .tag {
+      display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px;
+      border:1px solid rgba(255,255,255,0.08); font-weight:700;
+    }
+    .badge { font-size:0.82rem; }
+    .tag { font-size:0.78rem; background:var(--chip); }
+    .priority-dot { width:10px; height:10px; border-radius:50%; display:inline-block; }
+    .status-select, .edit-form input, .edit-form textarea, .edit-form select {
+      width:100%; padding:10px 12px; border-radius:12px; border:1px solid var(--border);
+      background: rgba(255,255,255,0.05); color: var(--text);
+    }
+    .status-select { width:auto; min-width:160px; }
+    .status-select option, #editPriority option { color: #000; }
+
+    .time-group {
+      margin-top: 18px; padding: 14px; border-radius: 16px;
+      background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06);
+    }
+
+    .time-group .granular-time {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.5em;
+    }
+
+    .edit-form {
+      margin-top: 0; padding: 0; border-radius: 0;
+      /* background: rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.06); */
+    }
+    .remaining { margin-top:8px; color:var(--accent); font-weight:700; }
+    .overdue-text { color: #fca5a5; }
+    .tags { display:flex; gap:8px; flex-wrap:wrap; list-style:none; padding:0; margin:18px 0 0; }
+    .actions { margin-top:22px; justify-content:flex-end; }
+    button {
+      border:0; border-radius:14px; padding:10px 16px; font-weight:700; cursor:pointer;
+      transition:transform .2s ease;
+    }
+    button:hover { transform: translateY(-1px); }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 3px solid rgba(56,189,248,0.6); outline-offset:3px;
+    }
+    .edit-btn, .save-btn { background: rgba(56,189,248,0.16); color:#e0f2fe; }
+    .delete-btn, .cancel-btn { background: rgba(239,68,68,0.16); color:#fee2e2; }
+    .expand-btn { background: transparent; color: var(--accent); padding: 0; display: inline; font-size: 14px; }
+    .hidden { display:none; }
+    .field { display:flex; flex-direction:column; gap:6px; margin-bottom:12px; }
+
+    @media (max-width: 768px) {
+      .status-row { flex-direction: column; align-items: stretch; }
+      .status-select { width:100%; }
+    }
+    @media (max-width: 480px) {
+      .todo-card { padding:18px; }
+      .actions button { flex:1; }
+      .top-row { flex-direction: column-reverse; }
+      .badge { align-self: flex-end; }
+    }
+  </style>
+</head>
+<body>
+  <article class="todo-card priority-high" data-testid="test-todo-card" id="todoCard">
+    <div id="viewMode">
+      <div class="top-row">
+        <div class="checkbox-wrap">
+          <input type="checkbox" id="taskComplete" data-testid="test-todo-complete-toggle" aria-label="Mark task as complete" />
+          <h2 data-testid="test-todo-title" id="taskTitle">Finish analytics dashboard UI polish</h2>
+        </div>
+        
+        <span class="badge" data-testid="test-todo-priority" aria-label="Task priority">
+          <span class="priority-dot" data-testid="test-todo-priority-indicator" id="priorityIndicator"></span>
+          <span id="priorityText">High</span>
+        </span>
+      </div>
+
+      <div data-testid="test-todo-collapsible-section" id="collapsibleSection">
+        <p data-testid="test-todo-description" id="taskDescription">Refine spacing, improve chart legend responsiveness, validate empty states, prepare QA automation selectors, improve empty data visualizations, and optimize tablet responsive behavior for charts and legends.</p>
+        <button class="expand-btn" data-testid="test-todo-expand-toggle" id="expandToggle" aria-expanded="false" aria-controls="collapsibleSection">See more</button>
+      </div>
+      <div class="desc">
+      </div>
+
+      <div class="status-row meta-row">
+        <span class="badge" data-testid="test-todo-status" id="taskStatus">In Progress</span>
+        <select class="status-select" data-testid="test-todo-status-control" id="statusControl" aria-label="Task status">
+          <option>Pending</option>
+          <option selected>In Progress</option>
+          <option>Done</option>
+        </select>
+      </div>
+
+      <div class="time-group">
+        <time data-testid="test-todo-due-date" id="dueDate"></time>
+        <hr>
+        <div class="granular-time">
+          <time class="remaining" data-testid="test-todo-time-remaining" id="timeRemaining" aria-live="polite"></time>
+          <div data-testid="test-todo-overdue-indicator" id="overdueIndicator" class="hidden overdue-text">Overdue</div>
+        </div>
+      </div>
+
+      <ul class="tags" role="list" data-testid="test-todo-tags">
+        <li class="tag" data-testid="test-todo-tag-work">work</li>
+        <li class="tag" data-testid="test-todo-tag-urgent">urgent</li>
+        <li class="tag" data-testid="test-todo-tag-design">design</li>
+      </ul>
+
+      <div class="actions">
+        <button class="edit-btn" type="button" data-testid="test-todo-edit-button" id="editBtn">Edit</button>
+        <button class="delete-btn" type="button" data-testid="test-todo-delete-button" id="deleteBtn">Delete</button>
+      </div>
+    </div>
+
+    <form class="edit-form hidden" data-testid="test-todo-edit-form" id="editForm">
+      <div class="field">
+        <label for="editTitle">Title</label>
+        <input id="editTitle" data-testid="test-todo-edit-title-input" />
+      </div>
+      <div class="field">
+        <label for="editDescription">Description</label>
+        <textarea id="editDescription" rows="4" data-testid="test-todo-edit-description-input"></textarea>
+      </div>
+      <div class="field">
+        <label for="editPriority">Priority</label>
+        <select id="editPriority" data-testid="test-todo-edit-priority-select">
+          <option>Low</option><option>Medium</option><option>High</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="editDueDate">Due date</label>
+        <input type="datetime-local" id="editDueDate" data-testid="test-todo-edit-due-date-input" />
+      </div>
+      <div class="actions">
+        <button type="submit" class="save-btn" data-testid="test-todo-save-button">Save</button>
+        <button type="button" class="cancel-btn" data-testid="test-todo-cancel-button" id="cancelBtn">Cancel</button>
+      </div>
+    </form>
+  </article>
+
+  <script>
+    const state = {
+      title: 'Finish analytics dashboard UI polish',
+      description: 'Refine spacing, improve chart legend responsiveness, validate empty states, prepare QA automation selectors, improve empty data visualizations, and optimize tablet responsive behavior for charts and legends.',
+      priority: 'High',
+      status: 'In Progress',
+      dueDate: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      expanded: false
+    };
+
+    const els = {
+      card: document.getElementById('todoCard'),
+      title: document.getElementById('taskTitle'),
+      desc: document.getElementById('taskDescription'),
+      priorityText: document.getElementById('priorityText'),
+      priorityIndicator: document.getElementById('priorityIndicator'),
+      status: document.getElementById('taskStatus'),
+      statusControl: document.getElementById('statusControl'),
+      checkbox: document.getElementById('taskComplete'),
+      dueDate: document.getElementById('dueDate'),
+      remaining: document.getElementById('timeRemaining'),
+      overdue: document.getElementById('overdueIndicator'),
+      expandToggle: document.getElementById('expandToggle'),
+      collapsible: document.getElementById('collapsibleSection'),
+      viewMode: document.getElementById('viewMode'),
+      editForm: document.getElementById('editForm'),
+      editBtn: document.getElementById('editBtn'),
+      cancelBtn: document.getElementById('cancelBtn'),
+      deleteBtn: document.getElementById('deleteBtn'),
+      editTitle: document.getElementById('editTitle'),
+      editDescription: document.getElementById('editDescription'),
+      editPriority: document.getElementById('editPriority'),
+      editDueDate: document.getElementById('editDueDate')
+    };
+
+    function formatDueDate(date) {
+      return `Due ${date.toLocaleString(undefined, { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit' })}`;
+    }
+
+    function getRemaining(date) {
+      if (state.status === 'Done') return 'Completed';
+      const diff = date.getTime() - Date.now();
+      const abs = Math.abs(diff);
+      const mins = Math.floor(abs / 60000);
+      const hours = Math.floor(mins / 60);
+      const days = Math.floor(hours / 24);
+      if (abs < 60000) return 'Due now!';
+      if (diff > 0) {
+        if (days >= 1) return `Due in ${days} day${days > 1 ? 's' : ''}`;
+        if (hours >= 1) return `Due in ${hours} hour${hours > 1 ? 's' : ''}`;
+        return `Due in ${mins} minute${mins !== 1 ? 's' : ''}`;
+      }
+      if (hours >= 1) return `Overdue by ${hours} hour${hours > 1 ? 's' : ''}`;
+      return `Overdue by ${mins} minute${mins !== 1 ? 's' : ''}`;
+    }
+
+    function applyPriority(priority) {
+      els.card.classList.remove('priority-low', 'priority-medium', 'priority-high');
+      els.card.classList.add(`priority-${priority.toLowerCase()}`);
+      const colors = { Low: 'var(--success)', Medium: 'var(--warning)', High: 'var(--danger)' };
+      els.priorityIndicator.style.background = colors[priority];
+    }
+
+    function render() {
+      els.title.textContent = state.title;
+      els.desc.textContent = state.expanded || state.description.length <= 120
+        ? state.description
+        : state.description.slice(0, 120) + '...';
+      els.priorityText.textContent = state.priority;
+      els.status.textContent = state.status;
+      els.statusControl.value = state.status;
+      els.checkbox.checked = state.status === 'Done';
+      els.card.classList.toggle('completed', state.status === 'Done');
+      els.dueDate.textContent = formatDueDate(state.dueDate);
+      const remaining = getRemaining(state.dueDate);
+      els.remaining.textContent = remaining;
+      const isOverdue = remaining.startsWith('Overdue');
+      els.overdue.classList.toggle('hidden', !isOverdue || state.status === 'Done');
+      els.card.classList.toggle('overdue', isOverdue);
+      els.expandToggle.textContent = state.expanded ? 'See less' : 'See more';
+      els.expandToggle.setAttribute('aria-expanded', String(state.expanded));
+      applyPriority(state.priority);
+    }
+
+    els.checkbox.addEventListener('change', () => {
+      state.status = els.checkbox.checked ? 'Done' : 'Pending';
+      render();
+    });
+
+    els.statusControl.addEventListener('change', (e) => {
+      state.status = e.target.value;
+      render();
+    });
+
+    els.expandToggle.addEventListener('click', () => {
+      state.expanded = !state.expanded;
+      render();
+    });
+
+    els.editBtn.addEventListener('click', () => {
+      els.viewMode.classList.add('hidden');
+      els.editForm.classList.remove('hidden');
+      els.editTitle.value = state.title;
+      els.editDescription.value = state.description;
+      els.editPriority.value = state.priority;
+      els.editDueDate.value = new Date(state.dueDate.getTime() - state.dueDate.getTimezoneOffset()*60000).toISOString().slice(0,16);
+      els.editTitle.focus();
+    });
+
+    els.cancelBtn.addEventListener('click', () => {
+      els.editForm.classList.add('hidden');
+      els.viewMode.classList.remove('hidden');
+      els.editBtn.focus();
+    });
+
+    els.editForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      state.title = els.editTitle.value.trim() || state.title;
+      state.description = els.editDescription.value.trim() || state.description;
+      state.priority = els.editPriority.value;
+      state.dueDate = new Date(els.editDueDate.value);
+      els.editForm.classList.add('hidden');
+      els.viewMode.classList.remove('hidden');
+      render();
+      els.editBtn.focus();
+    });
+
+    els.deleteBtn.addEventListener('click', () => alert('Delete button clicked'));
+
+    render();
+    setInterval(() => {
+      if (state.status !== 'Done') render();
+    }, 30000);
+  </script>
+</body>
+</html>
